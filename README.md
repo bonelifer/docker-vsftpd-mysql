@@ -43,15 +43,25 @@ openssl passwd -6 'yourpassword'
 [`docker-compose.yml`](docker-compose.yml) brings up `vsftpd` alongside a `mariadb` service seeded with a test user (see [Quick start](#quick-start) below):
 
 ```yaml
-version: '3'
 services:
+  vsftpd-init:
+    image: ghcr.io/bonelifer/docker-vsftpd-mysql:latest
+    container_name: vsftpd-init
+    entrypoint: ["/bin/sh", "-c", "mkdir -p /home/testuser && chown vsftp:vsftp /home/testuser"]
+    volumes:
+      - /var/ftp:/home
+    restart: "no"
+
   vsftpd:
     image: ghcr.io/bonelifer/docker-vsftpd-mysql:latest
     container_name: vsftpd
     restart: always
     network_mode: "host"
     depends_on:
-      - mariadb
+      mariadb:
+        condition: service_started
+      vsftpd-init:
+        condition: service_completed_successfully
     environment:
       - MYSQL_USER=user
       - MYSQL_PASSWORD=password
@@ -99,17 +109,15 @@ The bundled `mariadb` service is meant for trying this out locally. If you alrea
 
 ### Quick start
 
-[`mariadb-init/001-create-users.sql`](mariadb-init/001-create-users.sql) seeds a `users` table with one test login: `testuser` / `testpass` (stored as a `crypt(3)` SHA-512 hash).
+[`mariadb-init/001-create-users.sql`](mariadb-init/001-create-users.sql) seeds a `users` table with one test login: `testuser` / `testpass` (stored as a `crypt(3)` SHA-512 hash). The `vsftpd-init` service creates and `chown`s that user's home directory automatically before `vsftpd` starts.
 
 ```sh
 docker compose up -d
-mkdir -p /var/ftp/testuser
-docker compose exec vsftpd chown vsftp:vsftp /home/testuser
 ftp 127.0.0.1
 # login as testuser / testpass
 ```
 
-Per [Limits](#limits) above, the FTP user's home directory has to exist before login — pam-MySQL can't create it for you.
+Per [Limits](#limits) above, pam-MySQL can't create home directories for arbitrary FTP users — `vsftpd-init` only provisions the bundled `testuser`. Any other user you add to the `users` table still needs its home directory created (and owned by `vsftp`) the same way, e.g. by extending `vsftpd-init`'s command or running it manually against the `/var/ftp` volume.
 
 ## Contributing
 

@@ -1,12 +1,22 @@
-version: '3'
 services:
+  vsftpd-init:
+    image: ghcr.io/bonelifer/docker-vsftpd-mysql:latest
+    container_name: vsftpd-init
+    entrypoint: ["/bin/sh", "-c", "mkdir -p /home/testuser && chown vsftp:vsftp /home/testuser"]
+    volumes:
+      - /var/ftp:/home
+    restart: "no"
+
   vsftpd:
     image: ghcr.io/bonelifer/docker-vsftpd-mysql:latest
     container_name: vsftpd
     restart: always
     network_mode: "host"
     depends_on:
-      - mariadb
+      mariadb:
+        condition: service_started
+      vsftpd-init:
+        condition: service_completed_successfully
     environment:
       - MYSQL_USER=user
       - MYSQL_PASSWORD=password
