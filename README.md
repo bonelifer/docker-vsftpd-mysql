@@ -4,7 +4,7 @@ vsftpd with MySQL-backed authentication (via [pam-MySQL](https://github.com/Nige
 
 ## Limits
 
-- User home directories must be created manually. [pam-MySQL](https://github.com/NigelCunningham/pam-MySQL) does not support `getpwnam`, so vsftpd can't resolve a home directory from the system's user database — it relies on `local_root=/home/$USER` in `vsftpd.conf.tpl` instead.
+- vsftpd can't create home directories on its own. [pam-MySQL](https://github.com/NigelCunningham/pam-MySQL) doesn't support `getpwnam`, so it has no way to resolve one from the system's user database — every login resolves to `local_root=/home/$USER` in `vsftpd.conf.tpl`, and that path has to already exist. `add-ftp-user.sh`/`delete-ftp-user.sh` (see [Managing FTP users](#managing-ftp-users)) handle this automatically for users created through them; only directories made outside that workflow need manual attention.
 
 ## Build
 
