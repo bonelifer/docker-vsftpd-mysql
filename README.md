@@ -147,6 +147,12 @@ docker compose exec -it vsftpd delete-ftp-user.sh -u alice
 docker compose exec vsftpd delete-ftp-user.sh -u alice --delete-dir
 ```
 
+`check-ftp-user-dirs.sh` audits every row in `users` against `/home` and reports any that don't have a valid home directory: missing entirely, present but not owned by `vsftp`, or an unsafe username `add-ftp-user.sh` would never have created. Useful after manual edits to the table, or as a periodic health check — it exits `0` only if every row is valid.
+
+```sh
+docker compose exec vsftpd check-ftp-user-dirs.sh
+```
+
 ## Contributing
 
 Contributions are welcome!
