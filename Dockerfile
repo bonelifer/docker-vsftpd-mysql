@@ -21,7 +21,7 @@ RUN cd /root/pam-mysql \
     && autoreconf -i \
     && ./configure \
     && make install \
-    && strip /lib/security/pam_mysql.so
+    && strip /usr/lib/security/pam_mysql.so
 
 FROM golang:1.26.5-alpine3.24 AS golang
 RUN apk update && apk add --no-cache binutils git
@@ -37,7 +37,7 @@ ENV TZ=UTC \
     PASV_MAX_PORT=0 \
     PASV_MIN_PORT=0
 
-COPY --from=build /lib/security/pam_mysql.so /lib/security/pam_mysql.so
+COPY --from=build /usr/lib/security/pam_mysql.so /usr/lib/security/pam_mysql.so
 COPY --from=golang /go/bin/envsubst /bin/envsubst
 COPY vsftpd.sh /usr/sbin/
 COPY vsftpd.conf.tpl vsftpd.mysql.tpl /config/
