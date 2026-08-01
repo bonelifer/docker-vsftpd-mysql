@@ -125,7 +125,19 @@ ftp 127.0.0.1
 # login as testuser / testpass
 ```
 
-Per [Limits](#limits) above, pam-MySQL can't create home directories for arbitrary FTP users — `vsftpd-init` only provisions the bundled `testuser`. Any other user you add to the `users` table still needs its home directory created (and owned by `vsftp`) the same way, e.g. by extending `vsftpd-init`'s command or running it manually against the `/var/ftp` volume.
+Per [Limits](#limits) above, pam-MySQL can't create home directories for arbitrary FTP users — `vsftpd-init` only provisions the bundled `testuser`. For any other user, use `add-ftp-user.sh` (see below).
+
+### Managing FTP users
+
+`add-ftp-user.sh` is baked into the image and does the whole job in one step: it inserts a row into the `users` table (hashed per `MYSQL_PASSWD_CRYPT`) and creates/`chown`s the matching home directory, using the same `MYSQL_*` env vars `vsftpd` itself is configured with.
+
+```sh
+docker compose exec -it vsftpd add-ftp-user.sh -u alice
+# prompts for a password (hidden input), or pass one directly:
+docker compose exec vsftpd add-ftp-user.sh -u alice -p 'some-password'
+```
+
+It refuses to overwrite an existing username — remove the row from `users` (and its home directory) first if you need to recreate one.
 
 ## Contributing
 
