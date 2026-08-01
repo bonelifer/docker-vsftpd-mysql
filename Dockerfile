@@ -29,7 +29,7 @@ RUN go install github.com/drone/envsubst/cmd/envsubst@v1.0.3 \
     && strip /go/bin/envsubst
 
 FROM alpine:3.24.1
-RUN apk add --no-cache linux-pam mariadb-connector-c tzdata vsftpd
+RUN apk add --no-cache linux-pam mariadb-client mariadb-connector-c openssl tzdata vsftpd
 
 ENV TZ=UTC \
     LISTEN_PORT=21 \
@@ -40,6 +40,7 @@ ENV TZ=UTC \
 COPY --from=build /usr/lib/security/pam_mysql.so /usr/lib/security/pam_mysql.so
 COPY --from=golang /go/bin/envsubst /bin/envsubst
 COPY vsftpd.sh /usr/sbin/
+COPY add-ftp-user.sh /usr/local/sbin/
 COPY vsftpd.conf.tpl vsftpd.mysql.tpl /config/
 
 CMD ["/usr/sbin/vsftpd.sh"]
