@@ -4,7 +4,7 @@ services:
     container_name: vsftpd-init
     entrypoint: ["/bin/sh", "-c", "mkdir -p /home/testuser && chown vsftp:vsftp /home/testuser"]
     volumes:
-      - /var/ftp:/home
+      - ./data/var/ftp:/home
     restart: "no"
 
   vsftpd:
@@ -32,7 +32,7 @@ services:
       - PASV_MIN_PORT=0
       - PASV_MAX_PORT=0
     volumes:
-      - /var/ftp:/home
+      - ./data/var/ftp:/home
 
   mariadb:
     image: mariadb:11.4.12
