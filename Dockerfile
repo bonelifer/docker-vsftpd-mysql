@@ -1,25 +1,47 @@
-FROM alpine:3 as build
-RUN apk update && apk add libtool autoconf automake m4 pkgconfig gawk musl-dev mariadb-dev linux-pam-dev make gcc gzip tar curl
-RUN curl -L  https://github.com/NigelCunningham/pam-MySQL/archive/v0.8.1.tar.gz -o /root/pam-mysql.tar.gz
-RUN mkdir -p /root/pam-mysql && tar xvf /root/pam-mysql.tar.gz -C /root/pam-mysql --strip-components 1
-RUN cd /root/pam-mysql && autoreconf -i && ./configure && make install && strip /lib/security/pam_mysql.so
+FROM alpine:3.24.1 AS build
+RUN apk update && apk add --no-cache \
+        autoconf \
+        automake \
+        curl \
+        gawk \
+        gcc \
+        gzip \
+        libtool \
+        linux-pam-dev \
+        m4 \
+        make \
+        mariadb-dev \
+        musl-dev \
+        pkgconfig \
+        tar
+RUN curl -fL https://github.com/NigelCunningham/pam-MySQL/archive/v0.8.1.tar.gz -o /root/pam-mysql.tar.gz \
+    && mkdir -p /root/pam-mysql \
+    && tar xf /root/pam-mysql.tar.gz -C /root/pam-mysql --strip-components 1
+RUN cd /root/pam-mysql \
+    && autoreconf -i \
+    && ./configure \
+    && make install \
+    && strip /lib/security/pam_mysql.so
 
-FROM golang:1-alpine as golang
-RUN apk update && apk add binutils git
-RUN go get github.com/drone/envsubst/cmd/envsubst && strip /go/bin/envsubst
+FROM golang:1.26.5-alpine3.24 AS golang
+RUN apk update && apk add --no-cache binutils git
+RUN go install github.com/drone/envsubst/cmd/envsubst@v1.0.3 \
+    && strip /go/bin/envsubst
 
-FROM alpine:3
-RUN apk add --no-cache mariadb-connector-c tzdata linux-pam vsftpd
-ENV TZ Asia/Shanghai
+FROM alpine:3.24.1
+RUN apk add --no-cache linux-pam mariadb-connector-c tzdata vsftpd \
+    && addgroup -S vsftp \
+    && adduser -S -D -H -G vsftp -s /sbin/nologin vsftp
+
+ENV TZ=UTC \
+    LISTEN_PORT=21 \
+    PASV_ENABLE=YES \
+    PASV_MAX_PORT=0 \
+    PASV_MIN_PORT=0
 
 COPY --from=build /lib/security/pam_mysql.so /lib/security/pam_mysql.so
 COPY --from=golang /go/bin/envsubst /bin/envsubst
 COPY vsftpd.sh /usr/sbin/
 COPY vsftpd.conf.tpl vsftpd.mysql.tpl /config/
-
-ENV LISTEN_PORT 21
-ENV PASV_ENABLE YES
-ENV PASV_MAX_PORT 0
-ENV PASV_MIN_PORT 0
 
 CMD ["/usr/sbin/vsftpd.sh"]
