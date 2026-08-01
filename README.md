@@ -153,6 +153,12 @@ docker compose exec vsftpd delete-ftp-user.sh -u alice --delete-dir
 docker compose exec vsftpd check-ftp-user-dirs.sh
 ```
 
+`check-ftp-orphan-dirs.sh` is the reverse: it audits `/home` and reports any directory with no matching row in `users` (skipping `lost+found` and dotfiles/dirs). Also flags anything under `/home` that isn't a directory. Exits `0` only if every directory has a matching row.
+
+```sh
+docker compose exec vsftpd check-ftp-orphan-dirs.sh
+```
+
 ## Contributing
 
 Contributions are welcome!
