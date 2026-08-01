@@ -29,9 +29,7 @@ RUN go install github.com/drone/envsubst/cmd/envsubst@v1.0.3 \
     && strip /go/bin/envsubst
 
 FROM alpine:3.24.1
-RUN apk add --no-cache linux-pam mariadb-connector-c tzdata vsftpd \
-    && addgroup -S vsftp \
-    && adduser -S -D -H -G vsftp -s /sbin/nologin vsftp
+RUN apk add --no-cache linux-pam mariadb-connector-c tzdata vsftpd
 
 ENV TZ=UTC \
     LISTEN_PORT=21 \
