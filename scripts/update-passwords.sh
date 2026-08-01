@@ -13,7 +13,8 @@ usage() {
     echo "  -h, --help    Show this help" >&2
 }
 
-compose_file="docker-compose.yml"
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+compose_file="${repo_root}/docker-compose.yml"
 pass_len=24
 
 while [ "$#" -gt 0 ]; do
