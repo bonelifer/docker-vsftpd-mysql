@@ -1,0 +1,49 @@
+name: Bug report
+description: Report a problem with the vsftpd/MySQL auth image
+labels: ["bug"]
+body:
+  - type: dropdown
+    id: component
+    attributes:
+      label: Affected component
+      options:
+        - Dockerfile / image build
+        - vsftpd.sh (startup/envsubst)
+        - vsftpd.conf.tpl
+        - vsftpd.mysql.tpl (PAM/MySQL auth)
+        - docker-compose.yml
+        - Other / not sure
+    validations:
+      required: true
+  - type: input
+    id: image-version
+    attributes:
+      label: Image tag/version
+      description: e.g. ghcr.io/bonelifer/docker-vsftpd-mysql:latest, or a git commit SHA if built locally
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Include relevant environment variables (redact real passwords/hosts) and how the container was started
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      description: Output of `docker logs <container>`, vsftpd xferlog, etc.
+      render: shell
