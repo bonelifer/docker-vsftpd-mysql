@@ -80,6 +80,7 @@ Contributions are welcome!
 
 ## Acknowledgments
 
+- Originally forked from [cuckoohello/docker-vsftpd-mysql](https://github.com/cuckoohello/docker-vsftpd-mysql).
 - Code review, bug fixes, and documentation assisted by [Claude](https://www.anthropic.com/claude).
 
 ## License
