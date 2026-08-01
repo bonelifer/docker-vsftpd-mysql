@@ -101,6 +101,14 @@ volumes:
 
 `MARIADB_DATABASE`/`MARIADB_USER`/`MARIADB_PASSWORD` on the `mariadb` service must match `MYSQL_DATABASE`/`MYSQL_USER`/`MYSQL_PASSWORD` on the `vsftpd` service — they're the same credentials, just named per each image's convention.
 
+The example above ships with placeholder passwords (`password`, `changeme`). Before deploying for real, run:
+
+```sh
+scripts/update-passwords.sh
+```
+
+This generates new random `MYSQL_PASSWORD`/`MARIADB_PASSWORD` (kept in sync) and a new `MARIADB_ROOT_PASSWORD`, writes them into `docker-compose.yml`, backs up the previous version to `docker-compose.yml.bak`, and prints the new values once so you can save them elsewhere.
+
 The bundled `mariadb` service is meant for trying this out locally. If you already run MySQL/MariaDB elsewhere, drop that service and point `MYSQL_HOST` at it instead.
 
 ### Networking
