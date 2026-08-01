@@ -5,6 +5,8 @@ services:
     container_name: vsftpd
     restart: always
     network_mode: "host"
+    depends_on:
+      - mariadb
     environment:
       - MYSQL_USER=user
       - MYSQL_PASSWORD=password
@@ -21,3 +23,22 @@ services:
       - PASV_MAX_PORT=0
     volumes:
       - /var/ftp:/home
+
+  mariadb:
+    image: mariadb:11.4.12
+    container_name: vsftpd-mariadb
+    restart: always
+    ports:
+      - "127.0.0.1:3306:3306"
+    environment:
+      # Change this for anything beyond local testing.
+      - MARIADB_ROOT_PASSWORD=changeme
+      - MARIADB_DATABASE=database
+      - MARIADB_USER=user
+      - MARIADB_PASSWORD=password
+    volumes:
+      - mariadb-data:/var/lib/mysql
+      - ./mariadb-init:/docker-entrypoint-initdb.d:ro
+
+volumes:
+  mariadb-data:

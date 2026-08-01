@@ -40,6 +40,8 @@ openssl passwd -6 'yourpassword'
 
 ## Deploy
 
+[`docker-compose.yml`](docker-compose.yml) brings up `vsftpd` alongside a `mariadb` service seeded with a test user (see [Quick start](#quick-start) below):
+
 ```yaml
 version: '3'
 services:
@@ -48,6 +50,8 @@ services:
     container_name: vsftpd
     restart: always
     network_mode: "host"
+    depends_on:
+      - mariadb
     environment:
       - MYSQL_USER=user
       - MYSQL_PASSWORD=password
@@ -64,11 +68,48 @@ services:
       - PASV_MAX_PORT=0
     volumes:
       - /var/ftp:/home
+
+  mariadb:
+    image: mariadb:11.4.12
+    container_name: vsftpd-mariadb
+    restart: always
+    ports:
+      - "127.0.0.1:3306:3306"
+    environment:
+      # Change this for anything beyond local testing.
+      - MARIADB_ROOT_PASSWORD=changeme
+      - MARIADB_DATABASE=database
+      - MARIADB_USER=user
+      - MARIADB_PASSWORD=password
+    volumes:
+      - mariadb-data:/var/lib/mysql
+      - ./mariadb-init:/docker-entrypoint-initdb.d:ro
+
+volumes:
+  mariadb-data:
 ```
+
+`MARIADB_DATABASE`/`MARIADB_USER`/`MARIADB_PASSWORD` on the `mariadb` service must match `MYSQL_DATABASE`/`MYSQL_USER`/`MYSQL_PASSWORD` on the `vsftpd` service — they're the same credentials, just named per each image's convention.
+
+The bundled `mariadb` service is meant for trying this out locally. If you already run MySQL/MariaDB elsewhere, drop that service and point `MYSQL_HOST` at it instead.
 
 ### Networking
 
-`network_mode: "host"` is used above so passive-mode data connections don't need an explicit published port range. If you'd rather keep the container on an isolated Docker network, set `PASV_MIN_PORT`/`PASV_MAX_PORT` to a fixed range and publish `LISTEN_PORT` plus that range with `ports:` instead of using host networking.
+`network_mode: "host"` is used above so passive-mode data connections don't need an explicit published port range. If you'd rather keep the container on an isolated Docker network, set `PASV_MIN_PORT`/`PASV_MAX_PORT` to a fixed range and publish `LISTEN_PORT` plus that range with `ports:` instead of using host networking. `mariadb`'s port is published to `127.0.0.1` only, since `vsftpd` (on host networking) reaches it via `MYSQL_HOST=127.0.0.1`.
+
+### Quick start
+
+[`mariadb-init/001-create-users.sql`](mariadb-init/001-create-users.sql) seeds a `users` table with one test login: `testuser` / `testpass` (stored as a `crypt(3)` SHA-512 hash).
+
+```sh
+docker compose up -d
+mkdir -p /var/ftp/testuser
+docker compose exec vsftpd chown vsftp:vsftp /home/testuser
+ftp 127.0.0.1
+# login as testuser / testpass
+```
+
+Per [Limits](#limits) above, the FTP user's home directory has to exist before login — pam-MySQL can't create it for you.
 
 ## Contributing
 
