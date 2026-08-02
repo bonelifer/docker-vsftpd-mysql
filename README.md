@@ -129,7 +129,7 @@ Per [Limits](#limits) above, pam-MySQL can't create home directories for arbitra
 
 ### Managing FTP users
 
-`add-ftp-user.sh` is baked into the image and does the whole job in one step: it inserts a row into the `users` table (hashed per `MYSQL_PASSWD_CRYPT`) and creates/`chown`s the matching home directory, using the same `MYSQL_*` env vars `vsftpd` itself is configured with.
+**`add-ftp-user.sh`** is baked into the image and does the whole job in one step: it inserts a row into the `users` table (hashed per `MYSQL_PASSWD_CRYPT`) and creates/`chown`s the matching home directory, using the same `MYSQL_*` env vars `vsftpd` itself is configured with.
 
 ```sh
 docker compose exec -it vsftpd add-ftp-user.sh -u alice
@@ -141,7 +141,7 @@ If `/home/<username>` already exists (e.g. left over from a deleted account) but
 
 It refuses to overwrite an existing username — remove the row from `users` (and its home directory) first if you need to recreate one, e.g. with `delete-ftp-user.sh` below.
 
-`delete-ftp-user.sh` removes the matching row from `users`. By default it only touches the database and asks interactively whether to also delete `/home/<username>` — answering anything but `y` (or running non-interactively with no flag) leaves the directory in place. If you do ask it to delete the directory, it refuses unless the directory is actually owned by `vsftp` (in case the username matched something unrelated by mistake) — pass `--force` to delete it anyway.
+**`delete-ftp-user.sh`** removes the matching row from `users`. By default it only touches the database and asks interactively whether to also delete `/home/<username>` — answering anything but `y` (or running non-interactively with no flag) leaves the directory in place. If you do ask it to delete the directory, it refuses unless the directory is actually owned by `vsftp` (in case the username matched something unrelated by mistake) — pass `--force` to delete it anyway.
 
 ```sh
 docker compose exec -it vsftpd delete-ftp-user.sh -u alice
@@ -149,27 +149,27 @@ docker compose exec -it vsftpd delete-ftp-user.sh -u alice
 docker compose exec vsftpd delete-ftp-user.sh -u alice --delete-dir
 ```
 
-`set-ftp-password.sh` changes an existing user's password in place, without touching the home directory (no delete-and-recreate needed just to reset a password).
+**`set-ftp-password.sh`** changes an existing user's password in place, without touching the home directory (no delete-and-recreate needed just to reset a password).
 
 ```sh
 docker compose exec -it vsftpd set-ftp-password.sh -u alice
 docker compose exec vsftpd set-ftp-password.sh -u alice -p 'new-password'
 ```
 
-`list-ftp-users.sh` prints every username in `users`, alphabetically, with a count — never password hashes.
+**`list-ftp-users.sh`** prints every username in `users`, alphabetically, with a count — never password hashes.
 
 ```sh
 docker compose exec vsftpd list-ftp-users.sh
 ```
 
-`check-ftp-user-dirs.sh` audits every row in `users` against `/home` and reports any that don't have a valid home directory: missing entirely, present but not owned by `vsftp`, or an unsafe username `add-ftp-user.sh` would never have created. Useful after manual edits to the table, or as a periodic health check — it exits `0` only if every row is valid. `--fix` creates missing directories and corrects ownership (both non-destructive, applied automatically — `--fix` itself is the consent, no per-item prompt); an unsafe username still can't be fixed here, since that's a database decision, not a filesystem one.
+**`check-ftp-user-dirs.sh`** audits every row in `users` against `/home` and reports any that don't have a valid home directory: missing entirely, present but not owned by `vsftp`, or an unsafe username `add-ftp-user.sh` would never have created. Useful after manual edits to the table, or as a periodic health check — it exits `0` only if every row is valid. `--fix` creates missing directories and corrects ownership (both non-destructive, applied automatically — `--fix` itself is the consent, no per-item prompt); an unsafe username still can't be fixed here, since that's a database decision, not a filesystem one.
 
 ```sh
 docker compose exec vsftpd check-ftp-user-dirs.sh
 docker compose exec vsftpd check-ftp-user-dirs.sh --fix
 ```
 
-`check-ftp-orphan-dirs.sh` is the reverse: it audits `/home` and reports any directory with no matching row in `users` (skipping `lost+found` and dotfiles/dirs). Also flags anything under `/home` that isn't a directory. Exits `0` only if every directory has a matching row. `--fix` offers to delete orphans and stray files — unlike `check-ftp-user-dirs.sh`, this is destructive, so it asks per item even with `--fix` given (default no, 15-second timeout, same pattern as `add-ftp-user.sh`).
+**`check-ftp-orphan-dirs.sh`** is the reverse: it audits `/home` and reports any directory with no matching row in `users` (skipping `lost+found` and dotfiles/dirs). Also flags anything under `/home` that isn't a directory. Exits `0` only if every directory has a matching row. `--fix` offers to delete orphans and stray files — unlike `check-ftp-user-dirs.sh`, this is destructive, so it asks per item even with `--fix` given (default no, 15-second timeout, same pattern as `add-ftp-user.sh`).
 
 ```sh
 docker compose exec vsftpd check-ftp-orphan-dirs.sh
