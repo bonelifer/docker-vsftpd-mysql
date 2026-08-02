@@ -29,9 +29,9 @@ RUN go install github.com/drone/envsubst/cmd/envsubst@v1.0.3 \
     && strip /go/bin/envsubst
 
 FROM alpine:3.24.1
-RUN apk add --no-cache linux-pam mariadb-client mariadb-connector-c openssl tzdata vsftpd
+RUN apk add --no-cache linux-pam mariadb-client mariadb-connector-c nano openssl tzdata vsftpd
 
-ENV TZ=UTC \
+ENV TZ=America/Chicago \
     LISTEN_PORT=21 \
     PASV_ENABLE=YES \
     PASV_MAX_PORT=0 \
