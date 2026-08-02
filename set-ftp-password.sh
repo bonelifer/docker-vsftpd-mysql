@@ -77,6 +77,11 @@ if [ -z "$password" ]; then
     fi
 fi
 
+if [ -z "$password" ]; then
+    echo "Error: password must not be empty" >&2
+    exit 1
+fi
+
 : "${MYSQL_HOST:?MYSQL_HOST is not set}"
 : "${MYSQL_USER:?MYSQL_USER is not set}"
 : "${MYSQL_PASSWORD:?MYSQL_PASSWORD is not set}"

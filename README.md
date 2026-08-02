@@ -129,7 +129,7 @@ Per [Limits](#limits) above, pam-MySQL can't create home directories for arbitra
 
 ### Managing FTP users
 
-**`add-ftp-user.sh`** is baked into the image and does the whole job in one step: it inserts a row into the `users` table (hashed per `MYSQL_PASSWD_CRYPT`) and creates/`chown`s the matching home directory, using the same `MYSQL_*` env vars `vsftpd` itself is configured with.
+**`add-ftp-user.sh`** is baked into the image and does the whole job in one step: it inserts a row into the `users` table (hashed per `MYSQL_PASSWD_CRYPT`) and creates/`chown`s the matching home directory, using the same `MYSQL_*` env vars `vsftpd` itself is configured with. Rejects an empty password and a username longer than the `users` table's column actually allows.
 
 ```sh
 docker compose exec -it vsftpd add-ftp-user.sh -u alice
@@ -149,13 +149,13 @@ docker compose exec -it vsftpd delete-ftp-user.sh -u alice
 docker compose exec vsftpd delete-ftp-user.sh -u alice --delete-dir
 ```
 
-**`rename-ftp-user.sh`** updates the `users` row and moves `/home/<old>` to `/home/<new>`, keeping the user's files. Refuses to run if the new username already exists (in `users` or as an unrelated directory) — resolve that manually first rather than risk merging two users' files.
+**`rename-ftp-user.sh`** updates the `users` row and moves `/home/<old>` to `/home/<new>`, keeping the user's files. Refuses to run if the new username already exists (in `users` or as an unrelated directory) — resolve that manually first rather than risk merging two users' files. Handles case-only renames correctly (`alice` → `Alice`) despite MySQL/MariaDB's default case-insensitive collation, and rejects a new username longer than the column allows.
 
 ```sh
 docker compose exec vsftpd rename-ftp-user.sh -o alice -n alicia
 ```
 
-**`set-ftp-password.sh`** changes an existing user's password in place, without touching the home directory (no delete-and-recreate needed just to reset a password).
+**`set-ftp-password.sh`** changes an existing user's password in place, without touching the home directory (no delete-and-recreate needed just to reset a password). Rejects an empty password.
 
 ```sh
 docker compose exec -it vsftpd set-ftp-password.sh -u alice

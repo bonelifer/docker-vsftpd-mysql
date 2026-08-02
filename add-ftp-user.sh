@@ -80,6 +80,11 @@ if [ -z "$password" ]; then
     fi
 fi
 
+if [ -z "$password" ]; then
+    echo "Error: password must not be empty" >&2
+    exit 1
+fi
+
 : "${MYSQL_HOST:?MYSQL_HOST is not set}"
 : "${MYSQL_USER:?MYSQL_USER is not set}"
 : "${MYSQL_PASSWORD:?MYSQL_PASSWORD is not set}"
@@ -98,6 +103,17 @@ mariadb_exec() {
     MYSQL_PWD="$MYSQL_PASSWORD" mariadb -N -B \
         -h "$MYSQL_HOST" -u "$MYSQL_USER" "$MYSQL_DATABASE" -e "$1"
 }
+
+# Check the username against the actual column width rather than
+# assuming one - MYSQL_TABLE/MYSQL_USER_COLUMN can point at any
+# schema. A too-long username left unchecked would either get
+# silently truncated (non-strict SQL mode) or fail with a raw MySQL
+# error later; this gives a clear error up front instead.
+max_len="$(mariadb_exec "SELECT CHARACTER_MAXIMUM_LENGTH FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '$(sql_escape "$MYSQL_TABLE")' AND COLUMN_NAME = '$(sql_escape "$MYSQL_USER_COLUMN")'")"
+if [ -n "$max_len" ] && [ "$max_len" != "NULL" ] && [ "${#username}" -gt "$max_len" ]; then
+    echo "Error: username '$username' is ${#username} characters, longer than $MYSQL_TABLE.$MYSQL_USER_COLUMN's limit of $max_len" >&2
+    exit 1
+fi
 
 case "$crypt_mode" in
     1)
