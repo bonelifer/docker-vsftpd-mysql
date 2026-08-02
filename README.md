@@ -149,6 +149,19 @@ docker compose exec -it vsftpd delete-ftp-user.sh -u alice
 docker compose exec vsftpd delete-ftp-user.sh -u alice --delete-dir
 ```
 
+`set-ftp-password.sh` changes an existing user's password in place, without touching the home directory (no delete-and-recreate needed just to reset a password).
+
+```sh
+docker compose exec -it vsftpd set-ftp-password.sh -u alice
+docker compose exec vsftpd set-ftp-password.sh -u alice -p 'new-password'
+```
+
+`list-ftp-users.sh` prints every username in `users`, alphabetically, with a count — never password hashes.
+
+```sh
+docker compose exec vsftpd list-ftp-users.sh
+```
+
 `check-ftp-user-dirs.sh` audits every row in `users` against `/home` and reports any that don't have a valid home directory: missing entirely, present but not owned by `vsftp`, or an unsafe username `add-ftp-user.sh` would never have created. Useful after manual edits to the table, or as a periodic health check — it exits `0` only if every row is valid.
 
 ```sh
