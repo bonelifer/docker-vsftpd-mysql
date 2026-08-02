@@ -12,7 +12,7 @@ vsftpd with MySQL-backed authentication (via [pam-MySQL](https://github.com/Nige
 docker build -t docker-vsftpd-mysql .
 ```
 
-Images built from `master` and version tags (`vN.N.N`) are also published automatically to `ghcr.io/bonelifer/docker-vsftpd-mysql` by [`.github/workflows/build.yml`](.github/workflows/build.yml).
+Images built from `master` and version tags (`vN.N.N`) are also published automatically to [`ghcr.io/bonelifer/docker-vsftpd-mysql`](https://github.com/bonelifer/docker-vsftpd-mysql/pkgs/container/docker-vsftpd-mysql) by [`.github/workflows/build.yml`](.github/workflows/build.yml).
 
 ## Configuration
 
