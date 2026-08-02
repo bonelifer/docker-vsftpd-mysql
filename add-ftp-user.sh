@@ -3,7 +3,10 @@
 # Create an FTP user end-to-end, meant to run inside the vsftpd
 # container: inserts a row into the MySQL/MariaDB users table (using
 # the same MYSQL_* env vars vsftpd itself is configured with) and
-# provisions the matching home directory under /home.
+# provisions the matching home directory under /home. If a directory
+# for the username already exists (e.g. left over from a deleted
+# account), asks before linking the new account to it - default is
+# no, 15s timeout.
 #
 #   docker compose exec -it vsftpd add-ftp-user.sh -u alice
 
@@ -122,9 +125,26 @@ if [ "$existing" != "0" ]; then
     exit 1
 fi
 
+homedir="/home/$username"
+
+# No account exists yet, but a directory with this name already does -
+# could be leftover from a deleted account, or provisioned by hand.
+# Confirm before linking a new account to it rather than assuming.
+if [ -d "$homedir" ]; then
+    printf "Home directory %s already exists but has no account. Create '%s' and link it to this folder? [y/N] (15s timeout) " "$homedir" "$username"
+    read -t 15 -r reply || reply=""
+    case "$reply" in
+        [Yy]*) ;;
+        *)
+            echo "Aborted: not creating '$username' against the existing directory (default is no)." >&2
+            exit 1
+            ;;
+    esac
+fi
+
 mariadb_exec "INSERT INTO \`$MYSQL_TABLE\` (\`$MYSQL_USER_COLUMN\`, \`$MYSQL_PASSWD_COLUMN\`) VALUES ('$escaped_username', '$escaped_hash')"
 
-mkdir -p "/home/$username"
-chown vsftp:vsftp "/home/$username"
+mkdir -p "$homedir"
+chown vsftp:vsftp "$homedir"
 
-echo "Created FTP user '$username' (row in $MYSQL_TABLE, home /home/$username)"
+echo "Created FTP user '$username' (row in $MYSQL_TABLE, home $homedir)"
