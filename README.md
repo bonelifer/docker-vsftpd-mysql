@@ -47,7 +47,7 @@ services:
   vsftpd-init:
     image: ghcr.io/bonelifer/docker-vsftpd-mysql:latest
     container_name: vsftpd-init
-    entrypoint: ["/bin/sh", "-c", "mkdir -p /home/testuser && chown vsftp:vsftp /home/testuser"]
+    entrypoint: ["/bin/sh", "-c", "test -f /home/.vsftpd-init-done || { mkdir -p /home/testuser && chown vsftp:vsftp /home/testuser && touch /home/.vsftpd-init-done; }"]
     volumes:
       - ./data/var/ftp:/home
     restart: "no"
@@ -117,7 +117,7 @@ The bundled `mariadb` service is meant for trying this out locally. If you alrea
 
 ### Quick start
 
-[`mariadb-init/001-create-users.sql`](mariadb-init/001-create-users.sql) seeds a `users` table with one test login: `testuser` / `testpass` (stored as a `crypt(3)` SHA-512 hash). The `vsftpd-init` service creates and `chown`s that user's home directory automatically before `vsftpd` starts.
+[`mariadb-init/001-create-users.sql`](mariadb-init/001-create-users.sql) seeds a `users` table with one test login: `testuser` / `testpass` (stored as a `crypt(3)` SHA-512 hash). The `vsftpd-init` service creates and `chown`s that user's home directory automatically before `vsftpd` starts — but only once: it leaves a `.vsftpd-init-done` marker in `./data/var/ftp` and skips this on every later `up`, so deleting `testuser` (its directory, its DB row, or both) sticks instead of getting silently recreated on the next restart.
 
 ```sh
 docker compose up -d
