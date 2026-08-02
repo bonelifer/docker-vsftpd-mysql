@@ -40,7 +40,7 @@ ENV TZ=America/Chicago \
 COPY --from=build /usr/lib/security/pam_mysql.so /usr/lib/security/pam_mysql.so
 COPY --from=golang /go/bin/envsubst /bin/envsubst
 COPY vsftpd.sh /usr/sbin/
-COPY add-ftp-user.sh delete-ftp-user.sh set-ftp-password.sh list-ftp-users.sh check-ftp-user-dirs.sh check-ftp-orphan-dirs.sh /usr/local/sbin/
+COPY add-ftp-user.sh delete-ftp-user.sh rename-ftp-user.sh set-ftp-password.sh list-ftp-users.sh check-ftp-user-dirs.sh check-ftp-orphan-dirs.sh /usr/local/sbin/
 COPY vsftpd.conf.tpl vsftpd.mysql.tpl /config/
 
 CMD ["/usr/sbin/vsftpd.sh"]
