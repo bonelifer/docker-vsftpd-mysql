@@ -142,7 +142,14 @@ if [ -d "$homedir" ]; then
     esac
 fi
 
-mariadb_exec "INSERT INTO \`$MYSQL_TABLE\` (\`$MYSQL_USER_COLUMN\`, \`$MYSQL_PASSWD_COLUMN\`) VALUES ('$escaped_username', '$escaped_hash')"
+# WHERE NOT EXISTS instead of a plain INSERT closes the race between
+# the "existing" check above and this statement: two concurrent runs
+# for the same username can now only have one of them actually insert.
+affected="$(mariadb_exec "INSERT INTO \`$MYSQL_TABLE\` (\`$MYSQL_USER_COLUMN\`, \`$MYSQL_PASSWD_COLUMN\`) SELECT '$escaped_username', '$escaped_hash' FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM \`$MYSQL_TABLE\` WHERE \`$MYSQL_USER_COLUMN\` = '$escaped_username'); SELECT ROW_COUNT()")"
+if [ "$affected" != "1" ]; then
+    echo "Error: user '$username' already exists in $MYSQL_TABLE" >&2
+    exit 1
+fi
 
 mkdir -p "$homedir"
 chown vsftp:vsftp "$homedir"
