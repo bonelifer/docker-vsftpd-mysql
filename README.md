@@ -162,16 +162,18 @@ docker compose exec vsftpd set-ftp-password.sh -u alice -p 'new-password'
 docker compose exec vsftpd list-ftp-users.sh
 ```
 
-`check-ftp-user-dirs.sh` audits every row in `users` against `/home` and reports any that don't have a valid home directory: missing entirely, present but not owned by `vsftp`, or an unsafe username `add-ftp-user.sh` would never have created. Useful after manual edits to the table, or as a periodic health check — it exits `0` only if every row is valid.
+`check-ftp-user-dirs.sh` audits every row in `users` against `/home` and reports any that don't have a valid home directory: missing entirely, present but not owned by `vsftp`, or an unsafe username `add-ftp-user.sh` would never have created. Useful after manual edits to the table, or as a periodic health check — it exits `0` only if every row is valid. `--fix` creates missing directories and corrects ownership (both non-destructive, applied automatically — `--fix` itself is the consent, no per-item prompt); an unsafe username still can't be fixed here, since that's a database decision, not a filesystem one.
 
 ```sh
 docker compose exec vsftpd check-ftp-user-dirs.sh
+docker compose exec vsftpd check-ftp-user-dirs.sh --fix
 ```
 
-`check-ftp-orphan-dirs.sh` is the reverse: it audits `/home` and reports any directory with no matching row in `users` (skipping `lost+found` and dotfiles/dirs). Also flags anything under `/home` that isn't a directory. Exits `0` only if every directory has a matching row.
+`check-ftp-orphan-dirs.sh` is the reverse: it audits `/home` and reports any directory with no matching row in `users` (skipping `lost+found` and dotfiles/dirs). Also flags anything under `/home` that isn't a directory. Exits `0` only if every directory has a matching row. `--fix` offers to delete orphans and stray files — unlike `check-ftp-user-dirs.sh`, this is destructive, so it asks per item even with `--fix` given (default no, 15-second timeout, same pattern as `add-ftp-user.sh`).
 
 ```sh
 docker compose exec vsftpd check-ftp-orphan-dirs.sh
+docker compose exec -it vsftpd check-ftp-orphan-dirs.sh --fix
 ```
 
 ## Contributing
