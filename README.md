@@ -149,6 +149,12 @@ docker compose exec -it vsftpd delete-ftp-user.sh -u alice
 docker compose exec vsftpd delete-ftp-user.sh -u alice --delete-dir
 ```
 
+**`rename-ftp-user.sh`** updates the `users` row and moves `/home/<old>` to `/home/<new>`, keeping the user's files. Refuses to run if the new username already exists (in `users` or as an unrelated directory) — resolve that manually first rather than risk merging two users' files.
+
+```sh
+docker compose exec vsftpd rename-ftp-user.sh -o alice -n alicia
+```
+
 **`set-ftp-password.sh`** changes an existing user's password in place, without touching the home directory (no delete-and-recreate needed just to reset a password).
 
 ```sh
