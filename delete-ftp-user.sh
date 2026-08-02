@@ -4,22 +4,25 @@
 # the matching row from the MySQL/MariaDB users table (using the same
 # MYSQL_* env vars vsftpd itself is configured with). The home
 # directory under /home is left alone by default; use --delete-dir or
-# --keep-dir to skip the interactive prompt.
+# --keep-dir to skip the interactive prompt. Refuses to delete a
+# directory that isn't vsftp-owned unless --force is given.
 #
 #   docker compose exec -it vsftpd delete-ftp-user.sh -u alice
 
 set -eu
 
 usage() {
-    echo "Usage: $0 -u|--username <name> [--delete-dir|--keep-dir]" >&2
+    echo "Usage: $0 -u|--username <name> [--delete-dir|--keep-dir] [--force]" >&2
     echo "  -u, --username  FTP username to delete" >&2
     echo "      --delete-dir  Delete /home/<username> too, no prompt" >&2
     echo "      --keep-dir    Keep /home/<username>, no prompt" >&2
+    echo "      --force       Delete the directory even if it's not vsftp-owned" >&2
     echo "  -h, --help      Show this help" >&2
 }
 
 username=""
 dir_action=""
+force=0
 
 while [ "$#" -gt 0 ]; do
     case "$1" in
@@ -33,6 +36,10 @@ while [ "$#" -gt 0 ]; do
             ;;
         --keep-dir)
             dir_action="keep"
+            shift
+            ;;
+        --force)
+            force=1
             shift
             ;;
         -h|--help)
@@ -108,6 +115,17 @@ fi
 
 if [ "$dir_action" = "delete" ]; then
     if [ -d "$homedir" ]; then
+        # Refuse to rm -rf a directory that isn't actually vsftp's,
+        # in case the username matched something unrelated by
+        # accident. --force overrides this.
+        dir_uid="$(stat -c %u "$homedir")"
+        dir_gid="$(stat -c %g "$homedir")"
+        vsftp_uid="$(id -u vsftp)"
+        vsftp_gid="$(id -g vsftp)"
+        if { [ "$dir_uid" != "$vsftp_uid" ] || [ "$dir_gid" != "$vsftp_gid" ]; } && [ "$force" != "1" ]; then
+            echo "Error: refusing to delete $homedir, it is not owned by vsftp (use --force to override)" >&2
+            exit 1
+        fi
         rm -rf -- "$homedir"
         echo "Deleted $homedir"
     else

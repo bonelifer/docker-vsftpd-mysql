@@ -141,7 +141,7 @@ If `/home/<username>` already exists (e.g. left over from a deleted account) but
 
 It refuses to overwrite an existing username — remove the row from `users` (and its home directory) first if you need to recreate one, e.g. with `delete-ftp-user.sh` below.
 
-`delete-ftp-user.sh` removes the matching row from `users`. By default it only touches the database and asks interactively whether to also delete `/home/<username>` — answering anything but `y` (or running non-interactively with no flag) leaves the directory in place.
+`delete-ftp-user.sh` removes the matching row from `users`. By default it only touches the database and asks interactively whether to also delete `/home/<username>` — answering anything but `y` (or running non-interactively with no flag) leaves the directory in place. If you do ask it to delete the directory, it refuses unless the directory is actually owned by `vsftp` (in case the username matched something unrelated by mistake) — pass `--force` to delete it anyway.
 
 ```sh
 docker compose exec -it vsftpd delete-ftp-user.sh -u alice
