@@ -85,13 +85,27 @@ mariadb_exec() {
 escaped_old="$(sql_escape "$old_username")"
 escaped_new="$(sql_escape "$new_username")"
 
+# Check the new username against the actual column width rather than
+# assuming one. The old username doesn't need this check - it's
+# already a row in the table, so it already fits.
+max_len="$(mariadb_exec "SELECT CHARACTER_MAXIMUM_LENGTH FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '$(sql_escape "$MYSQL_TABLE")' AND COLUMN_NAME = '$(sql_escape "$MYSQL_USER_COLUMN")'")"
+if [ -n "$max_len" ] && [ "$max_len" != "NULL" ] && [ "${#new_username}" -gt "$max_len" ]; then
+    echo "Error: username '$new_username' is ${#new_username} characters, longer than $MYSQL_TABLE.$MYSQL_USER_COLUMN's limit of $max_len" >&2
+    exit 1
+fi
+
 existing_old="$(mariadb_exec "SELECT COUNT(*) FROM \`$MYSQL_TABLE\` WHERE \`$MYSQL_USER_COLUMN\` = '$escaped_old'")"
 if [ "$existing_old" = "0" ]; then
     echo "Error: user '$old_username' not found in $MYSQL_TABLE" >&2
     exit 1
 fi
 
-existing_new="$(mariadb_exec "SELECT COUNT(*) FROM \`$MYSQL_TABLE\` WHERE \`$MYSQL_USER_COLUMN\` = '$escaped_new'")"
+# AND usercol <> old (not just != in shell) matters here: MySQL/MariaDB's
+# default collation is case-insensitive, so a case-only rename (alice ->
+# Alice) would otherwise match its own row and falsely report a conflict.
+# <> is subject to the same collation as =, so it correctly excludes the
+# row being renamed while still catching a real different user.
+existing_new="$(mariadb_exec "SELECT COUNT(*) FROM \`$MYSQL_TABLE\` WHERE \`$MYSQL_USER_COLUMN\` = '$escaped_new' AND \`$MYSQL_USER_COLUMN\` <> '$escaped_old'")"
 if [ "$existing_new" != "0" ]; then
     echo "Error: user '$new_username' already exists in $MYSQL_TABLE" >&2
     exit 1
