@@ -137,6 +137,8 @@ docker compose exec -it vsftpd add-ftp-user.sh -u alice
 docker compose exec vsftpd add-ftp-user.sh -u alice -p 'some-password'
 ```
 
+If `/home/<username>` already exists (e.g. left over from a deleted account) but no matching row does, it asks before linking the new account to that directory — default is no, with a 15-second timeout.
+
 It refuses to overwrite an existing username — remove the row from `users` (and its home directory) first if you need to recreate one, e.g. with `delete-ftp-user.sh` below.
 
 `delete-ftp-user.sh` removes the matching row from `users`. By default it only touches the database and asks interactively whether to also delete `/home/<username>` — answering anything but `y` (or running non-interactively with no flag) leaves the directory in place.
